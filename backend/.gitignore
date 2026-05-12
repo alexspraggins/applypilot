@@ -1,0 +1,21 @@
+# Java / Maven
+target/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment files
+.env
+application-local.properties
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
+
+# Docker/Postgres local data if any
+postgres_data/
