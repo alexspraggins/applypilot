@@ -67,8 +67,7 @@ Expected: response includes a JWT token.
 Save the token:
 
 ```bash
-TOKEN="paste-jwt-token-here"
-APP_ID=1
+TOKEN="eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwidXNlcklkIjo3LCJuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNzc5NjgxNTAwLCJleHAiOjE3Nzk3Njc5MDB9.6vNzsOLCAHuDpD4_JnViijFPNB4euLBPrO93GzqEPpeszBFJMaiNlVu8R6FB-uUXpEtWaIFTsuM97XEn99mUTw"
 ```
 
 ## Invalid Login
@@ -119,6 +118,10 @@ curl -X POST http://localhost:8080/api/applications \
 ```
 
 Expected: response includes the created application and the current authenticated user as owner.
+
+```bash
+APP_ID=5
+```
 
 ## Get Application By ID
 
