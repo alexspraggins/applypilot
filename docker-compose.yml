@@ -13,6 +13,28 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U applypilot_user -d applypilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: applypilot-backend
+    restart: on-failure
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/applypilot
+      SPRING_DATASOURCE_USERNAME: applypilot_user
+      SPRING_DATASOURCE_PASSWORD: applypilot_password
+      APP_JWT_SECRET: QzOMS2uQxwIMj90YJXQxrs1sfDnNJCpb0GN1LQfbcIiqIDo7hcQCkq8H3Yu1Y4PAad8wJuwE1hMj0ymUHBqKFA==
+      APP_JWT_EXPIRATION_MS: 86400000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
