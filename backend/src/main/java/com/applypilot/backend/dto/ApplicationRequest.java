@@ -2,7 +2,6 @@ package com.applypilot.backend.dto;
 
 import com.applypilot.backend.model.ApplicationStatus;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,7 +26,4 @@ public class ApplicationRequest {
     private LocalDate appliedDate;
 
     private String notes;
-
-    @NotNull(message = "User ID is required")
-    private Long userId;
 }

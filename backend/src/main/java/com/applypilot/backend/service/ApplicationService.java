@@ -2,14 +2,12 @@ package com.applypilot.backend.service;
 
 import com.applypilot.backend.dto.ApplicationRequest;
 import com.applypilot.backend.dto.ApplicationResponse;
+import com.applypilot.backend.exception.ResourceNotFoundException;
 import com.applypilot.backend.model.Application;
 import com.applypilot.backend.model.ApplicationStatus;
 import com.applypilot.backend.model.User;
 import com.applypilot.backend.repository.ApplicationRepository;
-import com.applypilot.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
-
-import com.applypilot.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -17,30 +15,19 @@ import java.util.List;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
-    private final UserRepository userRepository;
 
-    public ApplicationService(
-            ApplicationRepository applicationRepository,
-            UserRepository userRepository
-    ) {
+    public ApplicationService(ApplicationRepository applicationRepository) {
         this.applicationRepository = applicationRepository;
-        this.userRepository = userRepository;
     }
 
-    public ApplicationResponse createApplication(ApplicationRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
+    public ApplicationResponse createApplication(User currentUser, ApplicationRequest request) {
         Application application = new Application(
                 request.getCompany(),
                 request.getPosition(),
-                user
+                currentUser
         );
 
-        application.setLocation(request.getLocation());
-        application.setJobUrl(request.getJobUrl());
-        application.setAppliedDate(request.getAppliedDate());
-        application.setNotes(request.getNotes());
+        applyRequestFields(application, request);
 
         if (request.getStatus() != null) {
             application.setStatus(request.getStatus());
@@ -48,56 +35,53 @@ public class ApplicationService {
             application.setStatus(ApplicationStatus.SAVED);
         }
 
-        Application savedApplication = applicationRepository.save(application);
-
-        return mapToResponse(savedApplication);
+        return mapToResponse(applicationRepository.save(application));
     }
 
-    public List<ApplicationResponse> getApplicationsByUserId(Long userId) {
-        return applicationRepository.findByUserIdOrderByCreatedAtDesc(userId)
+    public List<ApplicationResponse> getApplicationsByUser(User currentUser) {
+        return applicationRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    public ApplicationResponse getApplicationById(Long id) {
-        Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
-
-        return mapToResponse(application);
+    public ApplicationResponse getApplicationById(User currentUser, Long id) {
+        return mapToResponse(findOwnedApplication(currentUser, id));
     }
 
-    public ApplicationResponse updateApplication(Long id, ApplicationRequest request) {
-        Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    public ApplicationResponse updateApplication(User currentUser, Long id, ApplicationRequest request) {
+        Application application = findOwnedApplication(currentUser, id);
 
         application.setCompany(request.getCompany());
         application.setPosition(request.getPosition());
-        application.setLocation(request.getLocation());
-        application.setJobUrl(request.getJobUrl());
-        application.setAppliedDate(request.getAppliedDate());
-        application.setNotes(request.getNotes());
+        applyRequestFields(application, request);
 
         if (request.getStatus() != null) {
             application.setStatus(request.getStatus());
         }
 
-        Application savedApplication = applicationRepository.save(application);
-
-        return mapToResponse(savedApplication);
+        return mapToResponse(applicationRepository.save(application));
     }
 
-    public void deleteApplication(Long id) {
-        if (!applicationRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Application not found");
-        }
+    public void deleteApplication(User currentUser, Long id) {
+        Application application = findOwnedApplication(currentUser, id);
+        applicationRepository.delete(application);
+    }
 
-        applicationRepository.deleteById(id);
+    private Application findOwnedApplication(User currentUser, Long id) {
+        return applicationRepository.findByIdAndUserId(id, currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    }
+
+    private void applyRequestFields(Application application, ApplicationRequest request) {
+        application.setLocation(request.getLocation());
+        application.setJobUrl(request.getJobUrl());
+        application.setAppliedDate(request.getAppliedDate());
+        application.setNotes(request.getNotes());
     }
 
     private ApplicationResponse mapToResponse(Application application) {
         ApplicationResponse response = new ApplicationResponse();
-
         response.setId(application.getId());
         response.setCompany(application.getCompany());
         response.setPosition(application.getPosition());
@@ -109,7 +93,6 @@ public class ApplicationService {
         response.setCreatedAt(application.getCreatedAt());
         response.setUpdatedAt(application.getUpdatedAt());
         response.setUserId(application.getUser().getId());
-
         return response;
     }
 }

@@ -2,10 +2,12 @@ package com.applypilot.backend.controller;
 
 import com.applypilot.backend.dto.ApplicationRequest;
 import com.applypilot.backend.dto.ApplicationResponse;
+import com.applypilot.backend.model.User;
 import com.applypilot.backend.service.ApplicationService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,42 +23,42 @@ public class ApplicationController {
 
     @PostMapping
     public ResponseEntity<ApplicationResponse> createApplication(
+            @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody ApplicationRequest request
     ) {
-        ApplicationResponse response = applicationService.createApplication(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(applicationService.createApplication(currentUser, request));
     }
 
     @GetMapping
-    public ResponseEntity<List<ApplicationResponse>> getApplicationsByUserId(
-            @RequestParam Long userId
+    public ResponseEntity<List<ApplicationResponse>> getApplications(
+            @AuthenticationPrincipal User currentUser
     ) {
-        List<ApplicationResponse> responses = applicationService.getApplicationsByUserId(userId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(applicationService.getApplicationsByUser(currentUser));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApplicationResponse> getApplicationById(
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id
     ) {
-        ApplicationResponse response = applicationService.getApplicationById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(applicationService.getApplicationById(currentUser, id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApplicationResponse> updateApplication(
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
             @Valid @RequestBody ApplicationRequest request
     ) {
-        ApplicationResponse response = applicationService.updateApplication(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(applicationService.updateApplication(currentUser, id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteApplication(
+            @AuthenticationPrincipal User currentUser,
             @PathVariable Long id
     ) {
-        applicationService.deleteApplication(id);
+        applicationService.deleteApplication(currentUser, id);
         return ResponseEntity.noContent().build();
     }
 }
