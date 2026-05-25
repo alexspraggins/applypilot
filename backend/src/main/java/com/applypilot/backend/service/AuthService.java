@@ -14,13 +14,15 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -33,12 +35,14 @@ public class AuthService {
         User user = new User(
                 request.getName(),
                 request.getEmail(),
-                passwordHash
-        );
+                passwordHash);
 
         User savedUser = userRepository.save(user);
 
+        String token = jwtService.generateToken(savedUser);
+
         return new AuthResponse(
+                token,
                 savedUser.getId(),
                 savedUser.getName(),
                 savedUser.getEmail(),
@@ -52,14 +56,16 @@ public class AuthService {
 
         boolean passwordMatches = passwordEncoder.matches(
                 request.getPassword(),
-                user.getPasswordHash()
-        );
+                user.getPasswordHash());
 
         if (!passwordMatches) {
             throw new BadRequestException("Invalid email or password");
         }
 
+        String token = jwtService.generateToken(user);
+
         return new AuthResponse(
+                token,
                 user.getId(),
                 user.getName(),
                 user.getEmail(),

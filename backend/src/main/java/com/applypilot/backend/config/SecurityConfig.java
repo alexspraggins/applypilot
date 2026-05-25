@@ -6,28 +6,33 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Disable CSRF for now so API requests are easier to test.
-            // Later, you can revisit this for production security.
             .csrf(csrf -> csrf.disable())
 
-            // Allow requests without forcing login.
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/health", "/api/**").permitAll()
+                .requestMatchers("/health", "/api/auth/**").permitAll()
+                .requestMatchers("/api/applications/**").authenticated()
                 .anyRequest().permitAll()
             )
 
-            // Disable Spring Security's default login page.
             .formLogin(form -> form.disable())
 
-            // Disable browser basic-auth popup.
-            .httpBasic(basic -> basic.disable());
+            .httpBasic(basic -> basic.disable())
+
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
